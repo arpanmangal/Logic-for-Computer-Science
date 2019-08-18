@@ -4,33 +4,22 @@
 
 (* Some letter assignments *)
 exception DONT_CARE;;
-let rho1 l = match l with
-    | "x" -> T
-    | "y" -> T
-    | "z" -> F
+let gen_rho vx vy vz l = match l with
+    | "x" -> vx
+    | "y" -> vy
+    | "z" -> vz
     | _ -> raise DONT_CARE
     ;;
 
-let rho2 l = match l with
-    | "x" -> F
-    | "y" -> T
-    | "z" -> F
-    | _ -> raise DONT_CARE
-    ;;
+let rho1 = gen_rho true true true;;
+let rho2 = gen_rho true false true;;
+let rho3 = gen_rho false true true;;
+let rho4 = gen_rho false false true;;
+let rho5 = gen_rho true true false;;
+let rho6 = gen_rho true false false;;
+let rho7 = gen_rho false true false;;
+let rho8 = gen_rho false false false;;
 
-let rho3 l = match l with
-    | "x" -> F
-    | "y" -> F
-    | "z" -> F
-    | _ -> raise DONT_CARE
-    ;;
-
-let rho4 l = match l with
-    | "x" -> T
-    | "y" -> T
-    | "z" -> T
-    | _ -> raise DONT_CARE
-    ;;
 
 (* Propostion 1: p->(q->p) -- Tautology *)
 let p1 = Impl(
@@ -70,20 +59,20 @@ let p6 = And(
 
 
 (* Testing heights *)
-assert (ht p1) = 2;;
-assert (ht p2) = 2;;
-assert (ht p3) = 2;;
-assert (ht p4) = 2;;
-assert (ht p5) = 2;;
-assert (ht p6) = 2;;
+assert (ht p1 = 2);;
+assert (ht p2 = 3);;
+assert (ht p3 = 2);;
+assert (ht p4 = 2);;
+assert (ht p5 = 2);;
+assert (ht p6 = 2);;
 
 (* Testing sizes *)
-assert (size p1) = 2;;
-assert (size p2) = 2;;
-assert (size p3) = 2;;
-assert (size p4) = 2;;
-assert (size p5) = 2;;
-assert (size p6) = 2;;
+assert (size p1 = 5);;
+assert (size p2 = 13);;
+assert (size p3 = 7);;
+assert (size p4 = 5);;
+assert (size p5 = 7);;
+assert (size p6 = 7);;
 
 (* Printing letters in propositions *)
 print_set(letters p1);;
@@ -94,21 +83,66 @@ print_set(letters p5);;
 print_set(letters p6);;
 
 (* Testing truth with different rhos *)
-assert (truth p1 rho1) = T;;
-assert (truth p1 rho2) = T;;
-assert (truth p1 rho3) = T;;
-assert (truth p1 rho4) = T;;
-assert (truth p2 rho1) = T;;
-assert (truth p2 rho2) = T;;
-assert (truth p2 rho3) = T;;
-assert (truth p2 rho4) = T;;
-assert (truth p3 rho1) = F;;
-assert (truth p3 rho2) = F;;
-assert (truth p3 rho3) = F;;
-assert (truth p3 rho4) = F;;
-assert (truth p4 rho1) = F;;
-assert (truth p4 rho2) = F;;
-assert (truth p4 rho3) = F;;
-assert (truth p4 rho4) = F;;
+assert (truth p1 rho1 = true);;
+assert (truth p1 rho2 = true);;
+assert (truth p1 rho3 = true);;
+assert (truth p1 rho4 = true);;
+
+assert (truth p2 rho1 = true);;
+assert (truth p2 rho2 = true);;
+assert (truth p2 rho3 = true);;
+assert (truth p2 rho4 = true);;
+assert (truth p2 rho5 = true);;
+assert (truth p2 rho6 = true);;
+assert (truth p2 rho7 = true);;
+assert (truth p2 rho8 = true);;
+
+assert (truth p3 rho1 = false);;
+assert (truth p3 rho2 = false);;
+assert (truth p3 rho3 = false);;
+assert (truth p3 rho4 = false);;
+
+assert (truth p4 rho1 = false);;
+assert (truth p4 rho2 = false);;
+assert (truth p4 rho3 = false);;
+assert (truth p4 rho4 = false);;
+
+assert (truth p5 rho1 = true);;
+assert (truth p5 rho2 = true);;
+assert (truth p5 rho3 = false);;
+assert (truth p5 rho4 = true);;
+
+assert (truth p6 rho1 = true);;
+assert (truth p6 rho2 = false);;
+assert (truth p6 rho3 = false);;
+assert (truth p6 rho4 = true);;
 
 (* Testing sub-propositions *)
+let tree1 = let pimpliesq = Impl(L("p"), L("q")) in
+    And(
+        Or(pimpliesq, pimpliesq),
+        Or((Not pimpliesq), F)
+    );;
+let pat1 = Impl(L("p"), L("q"));;
+
+let tree2 = Or(
+    T,
+    Not(Iff(
+        T,
+        And(L("x"), T)
+    ))
+);;
+let pat2 = T;;
+
+let paths1 = subprop_at pat1 tree1;;
+let paths2 = subprop_at pat2 tree2;;
+print_set paths1;;
+print_set paths2;;
+
+let path3 = 
+    try
+        (subprop_at pat2 tree1)
+    with 
+            NotSubProp -> SS.singleton "exception success"
+    ;;
+print_set(path3);;
