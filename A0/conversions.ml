@@ -1,4 +1,5 @@
 (* Assignment 0 : Syntax and Semantics of Propositional Logic *)
+(* Use this file after importing "propositions.ml" *)
 
 (* Terminology:
 prop ::= T | F | L of string
@@ -6,8 +7,6 @@ prop ::= T | F | L of string
         | And (p1, p2) | Or (p1, p2)
         | Impl (p1, p2) | Iff (p1, p2)
 *)
-
-#use "propositions.ml";;
 
 
 (* Converting to NNF *)
