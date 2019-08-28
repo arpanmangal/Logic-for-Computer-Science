@@ -19,7 +19,7 @@ let rec nnf p = match p with
     | Impl (q1, q2) -> Or (nnf(Not q1), nnf(q2))
     | Iff (q1, q2) -> And ( nnf(Impl (q1,q2)), nnf(Impl(q2,q1)) )
     | Not T -> F
-    | Not F -> F
+    | Not F -> T
     | Not (L x) -> Not (L x)
     | Not (Not q) -> nnf q
     | Not (And (q1, q2)) -> Or (nnf(Not q1), nnf(Not q2))
