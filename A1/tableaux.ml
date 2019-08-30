@@ -69,9 +69,16 @@ let getNodeTruth aNode =
 
 
 (* definition of a tableaux *)
-type tableaux = List of string;;
-let emptyTab (_ : string) : node = (newNode T false);; (* Can change the defaults *)
-let addNodeInTab aTab key p truth = fun key' -> if key' = key then (newNode p truth) else aTab key;;
+(* type tableaux = List of string;; *)
+exception INVALID_NODE_ID;;
+let emptyTab = fun (_ : string) -> if (true = false) then newNode T false else raise INVALID_NODE_ID;;
+(* let emptyTab (_ : string) : node = (newNode T false);; Can change the defaults *)
+(* let addNodeInTab aTab key p truth =
+    let aNewNode = (newNode p truth) in
+    fun key' -> if key' = key then aNewNode else aTab key;; *)
+let addNodeInTab aTab nodeID aNode =
+    fun nodeID' -> if nodeID' = nodeID then aNode else aTab nodeID
+;;
 
 
 (* Developing the tableaux *)
@@ -99,17 +106,16 @@ let allPrefixes s =
 ;;
 
 (* 1. Closing all paths from this node *)
-let rec closePath aTab nodeID = let currNode = aTab nodeID
-    in
-    let _currClosedNode = nodeClosed currNode
-    in
-    if currNode.num_desc = 0 then () else
-        let _closeLeft = closePath aTab (concat nodeID "0")
-        in
+let rec closePath aTab nodeID = 
+    let currNode = aTab nodeID in
+    let currClosedNode = nodeClosed currNode in
+    let aTab = addNodeInTab aTab nodeID currClosedNode in
+    if currNode.num_desc = 0 then aTab else
+        let aTab = closePath aTab (concat nodeID "0") in
         if currNode.num_desc = 2 then 
             closePath aTab (concat nodeID "1")
         else
-            ()
+            aTab
     ;;
 
 (* 2. Closing all the contradicting paths *)
@@ -125,15 +131,78 @@ let contrad_path aTab =
         let parents = allPrefixes nodeID in
         let f truth aNodeID = truth || (isContradiction aNodeID nodeID) in
         let isContraNode = (List.fold_left f false parents) in
-        if isContraNode then closePath aTab nodeID else
-            if currNode.num_desc = 0 then () else
-                let _contraLeft = closeContradPaths aTab (concat nodeID "0")
-                in
+        if isContraNode then 
+            closePath aTab nodeID 
+        else
+            if currNode.num_desc = 0 then aTab else
+                let aTab = closeContradPaths aTab (concat nodeID "0") in
                 if currNode.num_desc = 2 
                 then
                     closeContradPaths aTab (concat nodeID "1")
                 else
-                    ()
+                    aTab
     in
     closeContradPaths aTab ""
 ;;
+
+(* 3. Validity of a Tableaux *)
+
+
+(* 4. Selecting an unexamined node which is not closed *)
+exception FULLY_DEVELOPED;;
+let select_node aTab =
+    let rec select_node nodeID =
+        let currNode = aTab nodeID in
+        if (currNode.closed = true) then
+            raise FULLY_DEVELOPED
+        else
+            if (currNode.examined = false) then nodeID else
+            if (currNode.num_desc = 0) then
+                if (currNode.examined = true) then raise FULLY_DEVELOPED else nodeID
+            else
+                try
+                    select_node (concat nodeID "0")
+                with 
+                    FULLY_DEVELOPED -> if (currNode.num_desc = 1) then 
+                            raise FULLY_DEVELOPED
+                        else
+                            select_node (concat nodeID "1")
+    in
+    select_node ""
+;;
+
+(* 5. Deveoping the Tableaux *)
+let rec extend_path_1_way aTab nodeID p1 t1 =
+    let currNode = aTab nodeID in
+    let _not_examined = assert(currNode.examined = false) in
+    if (currNode.closed = true) then aTab else
+    if (currNode.num_desc = 0) then
+        addNodeInTab aTab (concat nodeID "0") p1 t1
+    else
+        let aTab1 = extend_path_1_way aTab (concat nodeID "0") p1 t1 in
+        if (currNode.num_desc = 1) then 
+            aTab1
+        else
+            extend_path_1_way aTab (concat nodeID "1") p1 t1
+;;
+
+let rec extend_path_2_way aTab nodeID p1 t1 p2 t2 =
+    let currNode = aTab nodeID in
+    let _not_examined = assert(currNode.examined = false) in
+    if (currNode.closed = true) then aTab else
+    if (currNode.num_desc = 0) then
+        let tab1 = addNodeInTab aTab (concat nodeID "0") p1 t1 in
+        addNodeInTab aTab1 (concat nodeID "1") p2 t2
+    else
+        let aTab1 = extend_path_2_way aTab (concat nodeID "0") p1 t1 p2 t2 in
+        if (currNode.num_desc = 1) then
+            aTab1
+        else
+            extend_path_2_way aTab1 (concat nodeID "1") p1 t1 p2 t2
+;;
+
+(* let step_develop aTab nodeID =
+    let currNode = aTab nodeID in
+    let _not_examined_closed = assert(currNode.examined = false && currNode.close = false) in *)
+
+ 
