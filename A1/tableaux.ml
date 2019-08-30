@@ -71,12 +71,13 @@ let getNodeTruth aNode =
 (* type tableaux = List of string;; *)
 exception INVALID_NODE_ID;;
 let emptyTab = fun (_ : string) -> if (true = false) then newNode T false else raise INVALID_NODE_ID;;
-(* let emptyTab (_ : string) : node = (newNode T false);; Can change the defaults *)
+(* let emptyTab (_ : string) : node = (newNode T false);; *)
+(* Can change the defaults *)
 (* let addNodeInTab aTab key p truth =
     let aNewNode = (newNode p truth) in
     fun key' -> if key' = key then aNewNode else aTab key;; *)
 let addNodeInTab aTab nodeID aNode =
-    fun nodeID' -> if nodeID' = nodeID then aNode else aTab nodeID
+    fun node_id -> if node_id = nodeID then aNode else aTab node_id
 ;;
 
 (* Developing the tableaux *)
@@ -133,7 +134,7 @@ let print_tableaux aTab =
     let rec print_tab nodeID =
         let currNode = aTab nodeID in
         let _print_tab = match currNode.value with 
-            | Value (p, t) -> Printf.printf "%s : %s %s" nodeID (print_prop p) (print_bool t)
+            | Value (p, t) -> Printf.printf "|%s : %s || %s|" nodeID (print_prop p) (print_bool t)
         in
         if currNode.num_desc = 1 then 
             print_tab (concat nodeID "0")
@@ -186,7 +187,10 @@ let contrad_path aTab nodeID =
 ;;
 
 (* 3. Validity of a Tableaux *)
-
+let valid_tableau aTab =
+    let _print = print_tableaux aTab in
+    true
+;;
 
 (* 4. Selecting an unexamined node which is not closed *)
 exception FULLY_DEVELOPED;;
@@ -375,6 +379,22 @@ let find_assignments p t =
 ;;
 
 (* 7. Tautology and Contradictions *)
-(* let check_tautology p = 
+let check_tautology p = 
     let false_ass = find_assignments p false in
-    if false_ass = [] then  *)
+    if false_ass = [] then 
+        let aTab = develop_tableaux p false in
+        let _print = print_tableaux aTab in
+        []
+    else
+        false_ass
+;;
+
+let check_contradiction p = 
+    let true_ass = find_assignments p true in
+    if true_ass = [] then 
+        let aTab = develop_tableaux p true in
+        let _print = print_tableaux aTab in
+        []
+    else
+        true_ass
+;;
