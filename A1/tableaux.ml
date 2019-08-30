@@ -34,7 +34,6 @@ type prop =
     | Iff of prop * prop
     ;;
 
-
 (* definition of node as a function *)
 type nodeVal = Value of prop * bool;;
 type node = {
@@ -80,11 +79,20 @@ let addNodeInTab aTab nodeID aNode =
     fun nodeID' -> if nodeID' = nodeID then aNode else aTab nodeID
 ;;
 
-
 (* Developing the tableaux *)
 (* Helper functions *)
 let concat s1 s2 =
-    String.concat s1 ["";s2];;
+    String.concat s1 ["";s2]
+;;
+let concat3 s1 s2 s3 =
+    concat (concat s1 s2) s3
+;;
+let concat4 s1 s2 s3 s4 =
+    concat (concat3 s1 s2 s3) s4
+;;
+let concat5 s1 s2 s3 s4 s5 =
+    concat (concat4 s1 s2 s3 s4) s5
+;;
 
 let nList n = 
     if n = 0 then [] else
@@ -103,6 +111,38 @@ let allPrefixes s =
     if sLen = 0 then [] else
     if sLen = 1 then [""] else
     List.map (String.sub s 0) (nList sLen)
+;;
+
+(* Printing stuff *)
+let rec print_prop p = match p with
+    | T -> "T"
+    | F -> "F"
+    | L(x) -> concat3 "L(" x ")"
+    | Not(q) -> concat3 "Not(" (print_prop q) ")"
+    | And(q1, q2) -> concat5 "And(" (print_prop q1) "," (print_prop q2) ")"
+    | Or(q1, q2) -> concat5 "Or(" (print_prop q1) "," (print_prop q2) ")"
+    | Impl(q1, q2) -> concat5 "Impl(" (print_prop q1) "," (print_prop q2) ")"
+    | Iff(q1, q2) -> concat5 "Iff(" (print_prop q1) "," (print_prop q2) ")"
+;;
+
+(* Printing of the tableaux *)
+let print_bool b = 
+    if b then "true" else "false"
+;;
+let print_tableaux aTab =
+    let rec print_tab nodeID =
+        let currNode = aTab nodeID in
+        let _print_tab = match currNode.value with 
+            | Value (p, t) -> Printf.printf "%s : %s %s" nodeID (print_prop p) (print_bool t)
+        in
+        if currNode.num_desc = 1 then 
+            print_tab (concat nodeID "0")
+        else if currNode.num_desc = 2 then
+            let _print_left = print_tab (concat nodeID "0") in
+            let _print_right = print_tab (concat nodeID "1") in
+            ()
+    in
+    print_tab ""
 ;;
 
 (* 1. Closing all paths from this node *)
@@ -309,16 +349,32 @@ let find_assignments p t =
             []
         else 
             let curr_ass = match currNode.value with
-                        | Value (L(x), t)) -> [Ass(L(x), t)]
+                        | Value (L(x), t) -> [Ass(L(x), t)]
                         | Value (p, t) -> []
             in
-            if (currNode.num_desc = 1) then
+            if (currNode.num_desc = 0) then
                 if curr_ass = [] then [] else [curr_ass]
             else 
+                let make_tot_ass partial_ass =
+                    if curr_ass = [] then
+                        partial_ass
+                    else
+                        let concat l = curr_ass@l in
+                        List.map concat partial_ass
+                in
                 let left_ass = assignment_list (concat nodeID "0") in
-                let left_tot_ass = 
-                if (currNode.num_desc = 2) then
-           
+                let left_tot_ass = make_tot_ass left_ass in
+                if (currNode.num_desc = 1) then
+                    left_tot_ass
+                else
+                    let right_ass = assignment_list (concat nodeID "1") in
+                    let right_tot_ass = make_tot_ass right_ass in
+                    left_tot_ass @ right_tot_ass
     in
     assignment_list ""
 ;;
+
+(* 7. Tautology and Contradictions *)
+(* let check_tautology p = 
+    let false_ass = find_assignments p false in
+    if false_ass = [] then  *)
