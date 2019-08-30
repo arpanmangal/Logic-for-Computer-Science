@@ -2,25 +2,47 @@
 
 #use "tableaux.ml";;
 
-(* Testing printing of Tableaux *)
-let tab = 
-    let aTab = addNodeInTab emptyTab "" (newNode (Not F) true) in
-    addNodeInTab aTab "0" (newNode F false)
-;;
-print_tableaux tab;;
+Printf.printf("========================================================================================================");;
+
+exception EXCEPTION_EXPECTED;;
 
 (* Not F true *)
-(* let p1 = Not(F);;
-let aTab = addNodeInTab emptyTab "" (newNode p1 true);;
-print_tableaux aTab;;
-let next_expand = select_node aTab;;
-let bTab = step_develop aTab next_expand;;
-print_tableaux bTab;; *)
-
-(* F->T true
-let p1 = Impl(F, T);;
-let aTab = addNodeInTab emptyTab "" (newNode p1 true);;
+let p = Not(F);;
+let aTab = addNodeInTab emptyTab "" (newNode p true);;
 print_tableaux aTab;;
 let next_expand = select_node aTab;;
 let aTab = step_develop aTab next_expand;;
-print_tableaux aTab;; *)
+print_tableaux aTab;;
+let next_expand = select_node aTab;;
+let aTab = step_develop aTab next_expand;;
+print_tableaux aTab;;
+let a = try
+    let sn = select_node aTab in
+    raise EXCEPTION_EXPECTED
+with
+    FULLY_DEVELOPED -> "FULLY_DEVELOPED"
+;;
+
+Printf.printf("========================================================================================================");;
+
+(* F->T true *)
+let p = Impl(F, T);;
+let aTab = addNodeInTab emptyTab "" (newNode p true);;
+print_tableaux aTab;;
+let next_expand = select_node aTab;;
+let aTab = step_develop aTab next_expand;;
+print_tableaux aTab;;
+let next_expand = select_node aTab;;
+let aTab = step_develop aTab next_expand;;
+print_tableaux aTab;;
+let next_expand = select_node aTab;;
+let aTab = step_develop aTab next_expand;;
+print_tableaux aTab;;
+let a = try
+    let _sn = select_node aTab in
+    raise EXCEPTION_EXPECTED
+with
+    FULLY_DEVELOPED -> "FULLY_DEVELOPED"
+;;
+
+Printf.printf("========================================================================================================");;
