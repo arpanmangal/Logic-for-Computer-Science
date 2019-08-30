@@ -89,21 +89,90 @@ let p =
         x1
     )
 ;;
-(* let aTab = develop_tableaux p false;; *)
-(* print_tableaux aTab;; *)
 check_tautology p;;
 check_contradiction p;;
 
 Printf.printf("========================================================================================================");;
 
 (*(not p -> not q) -> ((not p -> q) - p)) *)
-(* let p = Impl(
-    L("x"),
-    Impl(L("y"), L("x"))
-);;
-let aTab = develop_tableaux p false;;
-print_tableaux aTab;;
+let p = 
+    let p = L "p" in
+    let q = L "q" in
+    let np = Not p in
+    let nq = Not q in
+    Impl(
+        Impl(np, nq),
+        Impl(
+            Impl(np, q),
+            p
+        )
+    )
+;;
 check_tautology p;;
 check_contradiction p;;
 
-Printf.printf("========================================================================================================");; *)
+Printf.printf("========================================================================================================");;
+
+(* T or F *)
+let p = Or(T, F);;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+(* T and F *)
+let p = And(T, F);;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+let p = Iff(T, T);;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+let p = Iff(F, F);;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+let p = Iff(T, F);;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+Printf.printf("========================================================================================================");;
+
+(* p or q  or  p or not q *)
+let p =
+    let p = L "p" in
+    let q = L "q" in
+    let nq = Not q in
+    Or(
+        Or (p, q),
+        Or (p, nq)
+    )
+;;
+
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
+
+(* iff(p, q) and iff(p, notq) *)
+let p =
+    let p = L "p" in
+    let q = L "q" in
+    let nq = Not q in
+    let pIFFq = Iff(p, q) in
+    let pIFFnq = Iff(p, nq) in
+    And(pIFFq, pIFFnq)
+;;
+check_tautology p;;
+check_contradiction p;;
+
+Printf.printf("========================================================================================================");;
