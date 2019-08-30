@@ -248,3 +248,77 @@ let step_develop aTab nodeID =
                 | _ -> raise INVALID_NODE_STRUC
 ;;
     
+
+let develop_tableaux p t =
+    let aTab = emptyTab in
+    let aTab = addNodeInTab aTab "" (newNode p t) in
+    let rec next_step aTab = 
+        try
+            let nodeID = select_node aTab in
+            let aTab = step_develop aTab nodeID in
+            next_step aTab
+        with
+            FULLY_DEVELOPED -> aTab
+    in
+    next_step aTab
+;;
+
+
+(* 6. Finding the truth assignments *)
+let open_path_exists aTab =
+    let rec open_path nodeID = 
+        let currNode = aTab nodeID in
+        if (currNode.closed = true) then
+            false
+        else if (currNode.num_desc = 0) then
+            true
+        else if (currNode.num_desc = 1) then
+            open_path (concat nodeID "0")
+        else
+            (open_path (concat nodeID "0")) || (open_path (concat nodeID "1"))
+    in
+    open_path ""
+;;
+
+let unexamined_path_exists aTab =
+    let rec unex_path nodeID =
+        let currNode = aTab nodeID in
+        if (currNode.examined = false) then
+            true
+        else if (currNode.num_desc = 0) then
+            false
+        else if (currNode.num_desc = 1) then
+            unex_path (concat nodeID "0")
+        else
+            (unex_path (concat nodeID "0")) || (unex_path (concat nodeID "1"))
+    in
+    unex_path ""
+;;
+
+type assignment = Ass of prop * bool;;
+let is_letter l = match l with
+    | L(x) -> true
+    | _ -> false
+;;
+
+let find_assignments p t = 
+    let aTab = develop_tableaux p t in
+    let rec assignment_list nodeID = 
+        let currNode = aTab nodeID in
+        if (currNode.closed = true) then
+            []
+        else 
+            let curr_ass = match currNode.value with
+                        | Value (L(x), t)) -> [Ass(L(x), t)]
+                        | Value (p, t) -> []
+            in
+            if (currNode.num_desc = 1) then
+                if curr_ass = [] then [] else [curr_ass]
+            else 
+                let left_ass = assignment_list (concat nodeID "0") in
+                let left_tot_ass = 
+                if (currNode.num_desc = 2) then
+           
+    in
+    assignment_list ""
+;;
