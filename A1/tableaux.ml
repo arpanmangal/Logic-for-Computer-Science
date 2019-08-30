@@ -306,9 +306,13 @@ let develop_tableaux p t =
     let aTab = emptyTab in
     let aTab = addNodeInTab aTab "" (newNode p t) in
     let rec next_step aTab = 
+        (* let _p = print_tableaux aTab in *)
+        (* let _p = Printf.printf("--------\n") in *)
         try
             let nodeID = select_node aTab in
             let aTab = step_develop aTab nodeID in
+            (* let _p = print_tableaux aTab in
+            let _p = Printf.printf("---\n") in *)
             let aTab = contrad_path aTab nodeID in
             next_step aTab
         with
@@ -319,36 +323,6 @@ let develop_tableaux p t =
 
 
 (* 6. Finding the truth assignments *)
-let open_path_exists aTab =
-    let rec open_path nodeID = 
-        let currNode = aTab nodeID in
-        if (currNode.closed = true) then
-            false
-        else if (currNode.num_desc = 0) then
-            true
-        else if (currNode.num_desc = 1) then
-            open_path (concat nodeID "0")
-        else
-            (open_path (concat nodeID "0")) || (open_path (concat nodeID "1"))
-    in
-    open_path ""
-;;
-
-let unexamined_path_exists aTab =
-    let rec unex_path nodeID =
-        let currNode = aTab nodeID in
-        if (currNode.examined = false) then
-            true
-        else if (currNode.num_desc = 0) then
-            false
-        else if (currNode.num_desc = 1) then
-            unex_path (concat nodeID "0")
-        else
-            (unex_path (concat nodeID "0")) || (unex_path (concat nodeID "1"))
-    in
-    unex_path ""
-;;
-
 type assignment = Ass of prop * bool;;
 let is_letter l = match l with
     | L(x) -> true
@@ -389,22 +363,39 @@ let find_assignments p t =
 ;;
 
 (* 7. Tautology and Contradictions *)
+let open_path_exists aTab =
+    let rec open_path nodeID = 
+        let currNode = aTab nodeID in
+        if (currNode.closed = true) then
+            false
+        else if (currNode.num_desc = 0) then
+            true
+        else if (currNode.num_desc = 1) then
+            open_path (concat nodeID "0")
+        else
+            (open_path (concat nodeID "0")) || (open_path (concat nodeID "1"))
+    in
+    open_path ""
+;;
+
 let check_tautology p = 
-    let false_ass = find_assignments p false in
-    if false_ass = [] then 
-        let aTab = develop_tableaux p false in
-        let _print = print_tableaux aTab in
-        []
+    let aTab = develop_tableaux p false in
+    if open_path_exists aTab then
+        let _p = Printf.printf "It's not a tautology :(\n" in
+        find_assignments p false
     else
-        false_ass
+        let _p = Printf.printf "It's a tautology :)\n" in
+        let _p = print_tableaux aTab in
+        []
 ;;
 
 let check_contradiction p = 
-    let true_ass = find_assignments p true in
-    if true_ass = [] then 
-        let aTab = develop_tableaux p true in
-        let _print = print_tableaux aTab in
-        []
+    let aTab = develop_tableaux p true in
+    if open_path_exists aTab then
+        let _p = Printf.printf "It's not a contradiction :(\n" in
+        find_assignments p true
     else
-        true_ass
+        let _p = Printf.printf "It's a contradiction :)\n" in
+        let _p = print_tableaux aTab in
+        []
 ;;
