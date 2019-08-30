@@ -119,7 +119,7 @@ let rec closePath aTab nodeID =
     ;;
 
 (* 2. Closing all the contradicting paths *)
-let contrad_path aTab =
+let contrad_path aTab nodeID =
     let isContradiction nodeID1 nodeID2 =
         let node1 = aTab nodeID1 in
         let node2 = aTab nodeID2 in 
@@ -142,7 +142,7 @@ let contrad_path aTab =
                 else
                     aTab
     in
-    closeContradPaths aTab ""
+    closeContradPaths aTab nodeID
 ;;
 
 (* 3. Validity of a Tableaux *)
@@ -177,11 +177,11 @@ let rec extend_path_1_way aTab nodeID p1 t1 =
     let _not_examined = assert(currNode.examined = false) in
     if (currNode.closed = true) then aTab else
     if (currNode.num_desc = 0) then
-        addNodeInTab aTab (concat nodeID "0") p1 t1
+        addNodeInTab aTab (concat nodeID "0") (newNode p1 t1)
     else
-        let aTab1 = extend_path_1_way aTab (concat nodeID "0") p1 t1 in
+        let aTab = extend_path_1_way aTab (concat nodeID "0") p1 t1 in
         if (currNode.num_desc = 1) then 
-            aTab1
+            aTab
         else
             extend_path_1_way aTab (concat nodeID "1") p1 t1
 ;;
@@ -191,18 +191,60 @@ let rec extend_path_2_way aTab nodeID p1 t1 p2 t2 =
     let _not_examined = assert(currNode.examined = false) in
     if (currNode.closed = true) then aTab else
     if (currNode.num_desc = 0) then
-        let tab1 = addNodeInTab aTab (concat nodeID "0") p1 t1 in
-        addNodeInTab aTab1 (concat nodeID "1") p2 t2
+        let aTab = addNodeInTab aTab (concat nodeID "0") (newNode p1 t1) in
+        addNodeInTab aTab (concat nodeID "1") (newNode p2 t2)
     else
-        let aTab1 = extend_path_2_way aTab (concat nodeID "0") p1 t1 p2 t2 in
+        let aTab = extend_path_2_way aTab (concat nodeID "0") p1 t1 p2 t2 in
         if (currNode.num_desc = 1) then
-            aTab1
+            aTab
         else
-            extend_path_2_way aTab1 (concat nodeID "1") p1 t1 p2 t2
+            extend_path_2_way aTab (concat nodeID "1") p1 t1 p2 t2
 ;;
 
-(* let step_develop aTab nodeID =
+exception INVALID_NODE_STRUC;;
+let step_develop aTab nodeID =
     let currNode = aTab nodeID in
-    let _not_examined_closed = assert(currNode.examined = false && currNode.close = false) in *)
-
- 
+    let _not_examined = assert(currNode.examined = false) in
+    if (currNode.closed = true) then aTab else
+    if (currNode.value = Value(T, true) || currNode.value = Value(F, false)) then
+        addNodeInTab aTab nodeID (nodeExamined currNode)
+    else if (currNode.value = Value(T, false) || currNode.value = Value(F, true)) then
+        let aTab = addNodeInTab aTab nodeID (nodeExamined currNode) in
+        closePath aTab nodeID
+    else
+        let aTab = contrad_path aTab nodeID in
+        if (aTab nodeID <> currNode) then
+            addNodeInTab aTab nodeID (nodeExamined currNode)
+        else
+            match currNode.value with
+                | Value (L(x), t) -> addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Not (p1), t) ->
+                    let aTab = extend_path_1_way aTab nodeID p1 (not t) in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (And(p1, p2), true) ->
+                    let aTab = extend_path_1_way aTab nodeID p1 true in
+                    let aTab = extend_path_1_way aTab nodeID p2 true in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Or(p1, p2), false) ->
+                    let aTab = extend_path_1_way aTab nodeID p1 false in
+                    let aTab = extend_path_1_way aTab nodeID p2 false in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Impl(p1, p2), false) ->
+                    let aTab = extend_path_1_way aTab nodeID p1 true in
+                    let aTab = extend_path_1_way aTab nodeID p2 false in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (And(p1, p2), false) ->
+                    let aTab = extend_path_2_way aTab nodeID p1 false p2 false in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Or(p1, p2), true) ->
+                    let aTab = extend_path_2_way aTab nodeID p1 true p2 true in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Impl(p1, p2), true) ->
+                    let aTab = extend_path_2_way aTab nodeID p1 false p2 true in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | Value (Iff(p1, p2), t) ->
+                    let aTab = extend_path_1_way aTab nodeID (And(Impl(p1, p2), Impl(p2,p1))) t in
+                    addNodeInTab aTab nodeID (nodeExamined currNode)
+                | _ -> raise INVALID_NODE_STRUC
+;;
+    
