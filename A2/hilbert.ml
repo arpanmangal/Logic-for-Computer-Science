@@ -33,6 +33,23 @@ type hprooftree =
 ;;
 
 
+(* Helper function *)
+let extract_gamma pft = match pft with
+    | Ass(g, _p) -> g
+    | K(g, _p) -> g
+    | S(g, _p) -> g
+    | R(g, _p) -> g
+    | MP(g, _p, _pft1, _pft2) -> g
+;;
+let extract_prop pft = match pft with
+    | Ass(_g, p) -> p
+    | K(_g, p) -> p
+    | S(_g, p) -> p
+    | R(_g, p) -> p
+    | MP(_g, p, _pft1, _pft2) -> p
+;;
+
+
 (* Checking validity of hprooftree *)
 let rec valid_hprooftree pft = match pft with
     | Ass (gm, pr) -> List.mem pr gm
@@ -55,20 +72,6 @@ let rec valid_hprooftree pft = match pft with
             | _ -> false
         )
     | MP (gm, pr, pft1, pft2) ->
-        let extract_gamma pft = match pft with
-            | Ass(g, _p) -> g
-            | K(g, _p) -> g
-            | S(g, _p) -> g
-            | R(g, _p) -> g
-            | MP(g, _p, _pft1, _pft2) -> g
-        in
-        let extract_prop pft = match pft with
-            | Ass(_g, p) -> p
-            | K(_g, p) -> p
-            | S(_g, p) -> p
-            | R(_g, p) -> p
-            | MP(_g, p, _pft1, _pft2) -> p
-        in
         let match_gamma pft = (extract_gamma pft) = gm
         in
         if match_gamma pft1 = false then
@@ -88,3 +91,44 @@ let rec valid_hprooftree pft = match pft with
                 true
 ;;
 
+
+let pad pft prop_set = 
+    let _a = assert (valid_hprooftree pft) in
+    match pft with
+    | Ass (g, p) -> Ass (g@prop_set, p)
+    | K (g, p) -> K (g@prop_set, p)
+    | S (g, p) -> Ass (g@prop_set, p)
+    | R (g, p) -> R (g@prop_set, p)
+    | MP (g, p, pft1, pft2) -> 
+        let padded_pft1 = pad pft1 prop_set in
+        let padded_pft2 = pad pft2 prop_set in
+        MP (g@prop_set, p, padded_pft1, padded_pft2)
+;;
+    
+
+let prune pft = 
+    let rec find_delta pft = match pft with
+        | Ass (g, p) -> [p]
+        | K (g, p) -> []
+        | S (g, p) -> []
+        | R (g, p) -> []
+        | MP (g, p, pft1, pft2) -> (find_delta pft1) @ (find_delta pft2)
+    in
+    let delta = find_delta pft in
+    let rec replace_gamma pft = match pft with
+        | Ass (g, p) -> Ass (delta, p)
+        | K (g, p) -> K (delta, p)
+        | S (g, p) -> S (delta, p)
+        | R (g, p) -> R (delta, p)
+        | MP (g, p, pft1, pft2) -> MP (delta, p, (replace_gamma pft1), (replace_gamma pft2))
+    in
+    replace_gamma pft
+;;
+
+
+(* dedthm function *)
+(* let rec dedthm pft p = 
+    let gam = extract_gamma pft in
+    let _a = assert (p in gam) in
+    let q = extract_prop p in
+     *)
