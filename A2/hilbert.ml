@@ -7,6 +7,7 @@ prop ::= T | F | L of string
         | Impl (p1, p2) | Iff (p1, p2)
 *)
 
+#use "set.ml";;
 
 (* prop definition *)
 type prop = 
@@ -92,17 +93,17 @@ let rec valid_hprooftree pft = match pft with
 ;;
 
 
-let pad pft prop_set = 
+let rec pad pft prop_set = 
     let _a = assert (valid_hprooftree pft) in
     match pft with
-    | Ass (g, p) -> Ass (g@prop_set, p)
-    | K (g, p) -> K (g@prop_set, p)
-    | S (g, p) -> Ass (g@prop_set, p)
-    | R (g, p) -> R (g@prop_set, p)
+    | Ass (g, p) -> Ass ((union g prop_set), p)
+    | K (g, p) -> K ((union g prop_set), p)
+    | S (g, p) -> Ass ((union g prop_set), p)
+    | R (g, p) -> R ((union g prop_set), p)
     | MP (g, p, pft1, pft2) -> 
         let padded_pft1 = pad pft1 prop_set in
         let padded_pft2 = pad pft2 prop_set in
-        MP (g@prop_set, p, padded_pft1, padded_pft2)
+        MP ((union g prop_set), p, padded_pft1, padded_pft2)
 ;;
     
 
@@ -112,7 +113,7 @@ let prune pft =
         | K (g, p) -> []
         | S (g, p) -> []
         | R (g, p) -> []
-        | MP (g, p, pft1, pft2) -> (find_delta pft1) @ (find_delta pft2)
+        | MP (g, p, pft1, pft2) -> union (find_delta pft1) (find_delta pft2)
     in
     let delta = find_delta pft in
     let rec replace_gamma pft = match pft with
@@ -127,8 +128,60 @@ let prune pft =
 
 
 (* dedthm function *)
-(* let rec dedthm pft p = 
+let pft_p_imp_p p gam =
+    let q = F in
+    let pp = Impl(p, p) in
+    let qp = Impl(q, p) in
+    let p_qp = Impl(p, qp) in
+    let qp_p = Impl(qp, p) in
+    let f1 = p_qp in
+    let f2 = Impl(p, qp_p) in
+    let f3 = Impl(p_qp, pp) in
+    let f4 = Impl(f2, f3) in
+    let pft = MP(
+        gam,
+        pp,
+        MP(
+            gam,
+            f3,
+            S(gam, f4),
+            K(gam, f2)
+        ),
+        K(gam, f1)
+    )
+    in
+    let _valid = assert (valid_hprooftree pft) in
+    pft
+;;
+
+let rec dedthm pft p = 
     let gam = extract_gamma pft in
     let _a = assert (p in gam) in
+    let newGam = remove_element gam p in
     let q = extract_prop p in
-     *)
+    if p = q then
+        pft_p_imp_p p newGam
+    else
+        match pft with
+            | Ass (g, q) -> Ass (newGam, q)
+            | K (g, q) -> K (newGam, q)
+            | S (g, q) -> S (newGam, q)
+            | R (g, q) -> R (newGam, q)
+            | MP (g, q, pft1, pft2) -> 
+                let r = extract_prop pft2 in
+                let rq = extract_prop pft1 in
+                let _a = assert(Impl(r, q) = rq) in
+                let p_rq = Impl(p, rq) in
+                let pr = Impl(p, r) in
+                let pq = Impl(p, q) in
+                let pr_pq = Impl(pr, pq) in
+                let prq_prpq = Impl(p_rq, pr_pq) in
+                let pft_p_rq = dedthm pft1 p in
+                let pft_pr = dedthm pft2 p in
+                let pft_prq_prpq = S(newGam, prq_prpq) in
+                let pft_pr_pq = MP(newGam, pr_pq, pft_prq_prpq, pft_p_rq) in
+                let pft_pq = MP(newGam, pq, pft_pr_pq, pft_pr) in
+                let _a = assert (valid_hprooftree pft_pq) in
+                pft_pq
+;; 
+    
