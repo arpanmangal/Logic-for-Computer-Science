@@ -168,9 +168,11 @@ let graft pft pft_list =
             | R (g, p) -> R (gam, p)
             | MP (g, p, pft1, pft2) -> MP(gam, p, (stich pft1), (stich pft2))
         in
-        stich pft
+        let spft = stich pft in
+        let _a = assert (valid_hprooftree spft) in
+        spft
 ;;
-(* 
+
 (* dedthm function *)
 let pft_p_imp_p p gam =
     let q = F in
@@ -200,17 +202,28 @@ let pft_p_imp_p p gam =
 
 let rec dedthm pft p = 
     let gam = extract_gamma pft in
-    let _a = assert (p in gam) in
+    let _a = assert (List.mem p gam) in
     let newGam = remove_element gam p in
-    let q = extract_prop p in
+    let q = extract_prop pft in
     if p = q then
         pft_p_imp_p p newGam
     else
+        let pq = Impl(p, q) in
+        let q_pq = Impl(q, pq) in
+        let pft_q_pq = K (newGam, q_pq) in
         match pft with
-            | Ass (g, q) -> Ass (newGam, q)
-            | K (g, q) -> K (newGam, q)
-            | S (g, q) -> S (newGam, q)
-            | R (g, q) -> R (newGam, q)
+            | Ass (g, q) ->
+                let pft_q = Ass (newGam, q) in
+                MP(newGam, pq, pft_q_pq, pft_q)
+            | K (g, q) -> 
+                let pft_q = K (newGam, q) in
+                MP(newGam, pq, pft_q_pq, pft_q)
+            | S (g, q) -> 
+                let pft_q = S (newGam, q) in
+                MP(newGam, pq, pft_q_pq, pft_q)
+            | R (g, q) -> 
+                let pft_q = R (newGam, q) in
+                MP(newGam, pq, pft_q_pq, pft_q)
             | MP (g, q, pft1, pft2) -> 
                 let r = extract_prop pft2 in
                 let rq = extract_prop pft1 in
@@ -228,4 +241,3 @@ let rec dedthm pft p =
                 let _a = assert (valid_hprooftree pft_pq) in
                 pft_pq
 ;; 
-     *)
