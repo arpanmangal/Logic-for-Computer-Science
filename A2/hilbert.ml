@@ -127,6 +127,44 @@ let prune pft =
 ;;
 
 
+(* graft function *)
+exception Q_NOT_FOUND;;
+let extract_one_gamma pft_list = match pft_list with
+    | x::xs -> extract_gamma x
+;;
+
+let q_pft_tree pft_list gam =
+    let rec make_q_pft_tree q_pft_tree pft_list = match pft_list with
+        | [] -> q_pft_tree
+        | x::xs -> 
+            let _a = assert (extract_gamma x) = gam in
+            let prop_x = extract_prop x in
+            let add_q = fun q -> if prop_x = q then x else q_pft_tree in
+            make_q_pft_tree add_q xs
+    in 
+    let empty_q_pft_tree = fun (_ : prop) -> if (true = false) then S(gam, F) else raise Q_NOT_FOUND in
+    make_q_pft_tree empty_q_pft_tree pft_list
+;;
+
+let graft pft pft_list =
+    let delta = extract_gamma pft in
+    let p = extract_prop pft in
+    if pft_list = [] then
+        let _a = assert (delta = []) in
+        pft
+    else
+        let gam = extract_one_gamma pft_list in
+        let q_pft_trees = q_pft_tree delta gam in
+        let rec stich pft = match pft with
+            | Ass (g, p) -> q_pft_trees p
+            | K (g, p) -> K (gam, p)
+            | S (g, p) -> S (gam, p) 
+            | R (g, p) -> R (gam, p)
+            | MP (g, p, pft1, pft2) -> MP(gam, p, (stich pft1), (stich pft2))
+        in
+        stich pft
+;;
+
 (* dedthm function *)
 let pft_p_imp_p p gam =
     let q = F in
@@ -143,7 +181,7 @@ let pft_p_imp_p p gam =
         pp,
         MP(
             gam,
-            f3,
+             f3,
             S(gam, f4),
             K(gam, f2)
         ),
