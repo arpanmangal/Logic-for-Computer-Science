@@ -98,12 +98,14 @@ let rec pad pft prop_set =
     match pft with
     | Ass (g, p) -> Ass ((union g prop_set), p)
     | K (g, p) -> K ((union g prop_set), p)
-    | S (g, p) -> Ass ((union g prop_set), p)
+    | S (g, p) -> S ((union g prop_set), p)
     | R (g, p) -> R ((union g prop_set), p)
     | MP (g, p, pft1, pft2) -> 
         let padded_pft1 = pad pft1 prop_set in
         let padded_pft2 = pad pft2 prop_set in
-        MP ((union g prop_set), p, padded_pft1, padded_pft2)
+        let padded_pft = MP ((union g prop_set), p, padded_pft1, padded_pft2) in
+        let _a = assert (valid_hprooftree padded_pft) in
+        padded_pft
 ;;
     
 
@@ -123,40 +125,44 @@ let prune pft =
         | R (g, p) -> R (delta, p)
         | MP (g, p, pft1, pft2) -> MP (delta, p, (replace_gamma pft1), (replace_gamma pft2))
     in
-    replace_gamma pft
+    let pruned_pft = replace_gamma pft in
+    let _a = assert (valid_hprooftree pruned_pft) in
+    pruned_pft
 ;;
 
-(* 
+
 (* graft function *)
 exception Q_NOT_FOUND;;
+exception EMPTY_PFT_LIST;;
 let extract_one_gamma pft_list = match pft_list with
+    | [] -> raise EMPTY_PFT_LIST
     | x::xs -> extract_gamma x
 ;;
 
-let q_pft_tree pft_list gam =
-    let rec make_q_pft_tree q_pft_tree pft_list = match pft_list with
-        | [] -> q_pft_tree
+let q_pft_map pft_list gam =
+    let rec make_q_map q_map pft_list = match pft_list with
+        | [] -> q_map
         | x::xs -> 
-            let _a = assert (extract_gamma x) = gam in
+            let _a = assert ((extract_gamma x) = gam) in
             let prop_x = extract_prop x in
-            let add_q = fun q -> if prop_x = q then x else q_pft_tree in
-            make_q_pft_tree add_q xs
+            let new_map = fun q -> if q = prop_x then x else q_map q in
+            make_q_map new_map xs
     in 
-    let empty_q_pft_tree = fun (_ : prop) -> if (true = false) then S(gam, F) else raise Q_NOT_FOUND in
-    make_q_pft_tree empty_q_pft_tree pft_list
+    let empty_q_map = fun (_ : prop) -> if (true = false) then S(gam, F) else raise Q_NOT_FOUND in
+    make_q_map empty_q_map pft_list
 ;;
 
 let graft pft pft_list =
     let delta = extract_gamma pft in
-    let p = extract_prop pft in
+    let _a = assert (List.length delta = List.length pft_list) in
     if pft_list = [] then
         let _a = assert (delta = []) in
         pft
     else
         let gam = extract_one_gamma pft_list in
-        let q_pft_trees = q_pft_tree delta gam in
+        let q_map = q_pft_map pft_list gam in
         let rec stich pft = match pft with
-            | Ass (g, p) -> q_pft_trees p
+            | Ass (g, p) -> q_map p
             | K (g, p) -> K (gam, p)
             | S (g, p) -> S (gam, p) 
             | R (g, p) -> R (gam, p)
@@ -164,7 +170,7 @@ let graft pft pft_list =
         in
         stich pft
 ;;
-
+(* 
 (* dedthm function *)
 let pft_p_imp_p p gam =
     let q = F in
