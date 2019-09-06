@@ -6,6 +6,10 @@ let rec union set1 set2 = match set2 with
     | [] -> set1
     | x::xs -> add_val x (union set1 xs)
 ;;
+let rec equal set1 set2 = 
+    union set1 set2 = set1
+;;
+
 let intersection set1 set2 = 
     let rec cum_inter set1 set2 inter = match set2 with
         | [] -> inter
@@ -14,7 +18,7 @@ let intersection set1 set2 =
           else
             cum_inter set1 xs inter
     in
-    cum_inter set1 set2 empty_set
+    cum_inter set1 set2 (empty_set ())
 ;;
 
 (* set1 <= set2 *)
@@ -29,7 +33,7 @@ let subset set1 set2 =
 ;; *)
 
 (* set1 - set2 *)
-let remove_element set e = match set with
+let rec remove_element set e = match set with
     | [] -> set
     | x::xs -> if x = e then remove_element xs e else x::(remove_element xs e)
 ;;

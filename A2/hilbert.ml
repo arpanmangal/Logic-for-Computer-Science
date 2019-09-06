@@ -126,7 +126,7 @@ let prune pft =
     replace_gamma pft
 ;;
 
-
+(* 
 (* graft function *)
 exception Q_NOT_FOUND;;
 let extract_one_gamma pft_list = match pft_list with
@@ -222,4 +222,4 @@ let rec dedthm pft p =
                 let _a = assert (valid_hprooftree pft_pq) in
                 pft_pq
 ;; 
-    
+     *)
