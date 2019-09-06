@@ -141,3 +141,72 @@ let valid_ndprooftree pft = match pft with
                 else true
             | _ -> false)
 ;;
+
+
+(* Padding *)
+let rec replace_gamma pft newGamma = match pft with
+    | Hyp (g, p) -> Hyp (newGamma, p)
+    | TI (g) -> TI (newGamma)
+    | ImpliesI (g, p, pft1) -> ImpliesI (newGamma, p, pft1)
+    | ImpliesE (g, p, pft1, pft2) -> ImpliesE (newGamma, p, pft1, pft2)
+    | NotInt (g, p, pft1) -> NotInt (newGamma, p, pft1)
+    | NotClass (g, p, pft1) -> NotClass (newGamma, p, pft1)
+    | AndI (g, p, pft1, pft2) -> AndI (newGamma, p, pft1, pft2)
+    | AndEL (g, p, pft1) -> AndEL (newGamma, p, pft1)
+    | AndER (g, p, pft1) -> AndER (newGamma, p, pft1)
+    | OrIL (g, p, pft1) -> OrIL (newGamma, p, pft1)
+    | OrIR (g, p, pft1) -> OrIR (newGamma, p, pft1) 
+    | OrE (g, p, pft1, pft2, pft3) -> OrE (newGamma, p, pft1, pft2, pft3)
+;;
+
+let rec pad pft delta =
+    let _a = assert (valid_ndprooftree pft) in
+    let g = extract_gamma pft in
+    let newGamma = union g delta in
+    let padded_pft = replace_gamma pft newGamma in
+    let _a = assert (valid_ndprooftree padded_pft) in
+    padded_pft
+;;
+
+
+(* Pruning *)
+let prune pft = 
+    let rec find_delta pft = match pft with
+        | Hyp (g, p) -> [p]
+        | TI (g) -> []
+        | ImpliesI (g, p, pft1) -> find_delta pft1
+        | ImpliesE (g, p, pft1, pft2) -> union (find_delta pft1) (find_delta pft2)
+        | NotInt (g, p, pft1) -> find_delta pft1
+        | NotClass (g, p, pft1) -> find_delta pft1
+        | AndI (g, p, pft1, pft2) -> union (find_delta pft1) (find_delta pft2)
+        | AndEL (g, p, pft1) -> find_delta pft1
+        | AndER (g, p, pft1) -> find_delta pft1
+        | OrIL (g, p, pft1) -> find_delta pft1
+        | OrIR (g, p, pft1) -> find_delta pft1
+        | OrE (g, p, pft1, pft2, pft3) -> union (find_delta pft1) (union (find_delta pft2) (find_delta pft3))
+    in
+    let delta = find_delta pft in
+    let pruned_pft = replace_gamma pft delta in
+    let _a = assert (valid_ndprooftree pruned_pft) in
+    pruned_pft
+;;
+
+
+(* Graft function *)
+
+
+
+let extract_prop pft = match pft with
+    | Hyp (g, p) -> p
+    | TI (g) -> T
+    | ImpliesI (g, p, pft1) -> p
+    | ImpliesE (g, p, pft1, pft2) -> p
+    | NotInt (g, p, pft1) -> p
+    | NotClass (g, p, pft1) -> p
+    | AndI (g, p, pft1, pft2) -> p
+    | AndEL (g, p, pft1) -> p
+    | AndER (g, p, pft1) -> p
+    | OrIL (g, p, pft1) -> p
+    | OrIR (g, p, pft1) -> p
+    | OrE (g, p, pft1, pft2, pft3) -> p
+;;
