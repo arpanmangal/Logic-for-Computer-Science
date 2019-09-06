@@ -193,20 +193,50 @@ let prune pft =
 
 
 (* Graft function *)
+exception Q_NOT_FOUND;;
+exception EMPTY_PFT_LIST;;
+let extract_one_gamma pft_list = match pft_list with
+    | [] -> raise EMPTY_PFT_LIST
+    | x::xs -> extract_gamma x
+;;
 
+let q_pft_map pft_list gam =
+    let rec make_q_map q_map pft_list = match pft_list with
+        | [] -> q_map
+        | x::xs -> 
+            let _a = assert ((extract_gamma x) = gam) in
+            let prop_x = extract_prop x in
+            let new_map = fun q -> if q = prop_x then x else q_map q in
+            make_q_map new_map xs
+    in 
+    let empty_q_map = fun (_ : prop) -> if (true = false) then Hyp(gam, F) else raise Q_NOT_FOUND in
+    make_q_map empty_q_map pft_list
+;;
 
-
-let extract_prop pft = match pft with
-    | Hyp (g, p) -> p
-    | TI (g) -> T
-    | ImpliesI (g, p, pft1) -> p
-    | ImpliesE (g, p, pft1, pft2) -> p
-    | NotInt (g, p, pft1) -> p
-    | NotClass (g, p, pft1) -> p
-    | AndI (g, p, pft1, pft2) -> p
-    | AndEL (g, p, pft1) -> p
-    | AndER (g, p, pft1) -> p
-    | OrIL (g, p, pft1) -> p
-    | OrIR (g, p, pft1) -> p
-    | OrE (g, p, pft1, pft2, pft3) -> p
+let graft pft pft_list =
+    let delta = extract_gamma pft in
+    let _a = assert (List.length delta = List.length pft_list) in
+    if pft_list = [] then
+        let _a = assert (delta = []) in
+        pft
+    else
+        let gam = extract_one_gamma pft_list in
+        let q_map = q_pft_map pft_list gam in
+        let rec stich pft = match pft with
+            | Hyp (g, p) -> q_map p
+            | TI (g) -> TI (g)
+            | ImpliesI (g, p, pft1) -> ImpliesI (g, p, stich pft1)
+            | ImpliesE (g, p, pft1, pft2) -> ImpliesE (g, p, stich pft1, stich pft2)
+            | NotInt (g, p, pft1) -> NotInt (g, p, stich pft1)
+            | NotClass (g, p, pft1) -> NotClass (g, p, stich pft1)
+            | AndI (g, p, pft1, pft2) -> AndI (g, p, stich pft1, stich pft2)
+            | AndEL (g, p, pft1) -> AndEL (g, p, stich pft1)
+            | AndER (g, p, pft1) -> AndER (g, p, stich pft1)
+            | OrIL (g, p, pft1) -> OrIL (g, p, stich pft1)
+            | OrIR (g, p, pft1) -> OrIR (g, p, stich pft1)
+            | OrE (g, p, pft1, pft2, pft3) -> OrE (g, p, stich pft1, stich pft2, stich pft3)
+        in
+        let spft = stich pft in
+        let _a = assert (valid_ndprooftree spft) in
+        spft
 ;;
