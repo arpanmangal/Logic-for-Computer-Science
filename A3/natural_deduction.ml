@@ -82,7 +82,7 @@ let rec valid_ndprooftree pft = match pft with
         | Impl(p1, q1) -> 
             let g' = extract_gamma pft1 in
             let q2 = extract_prop pft1 in
-            if difference g' g <> [p1] then false
+            if not_equal g' (union g [p1]) then false
             else if q1 <> q2 then false
             else true
         | _ -> false)
@@ -270,8 +270,8 @@ let prune pft =
             OrE (
                 delta, p,
                 change_gamma pft1 delta1,
-                change_gamma pft1 delta2,
-                change_gamma pft1 delta3
+                change_gamma pft2 delta2,
+                change_gamma pft3 delta3
             )
     in
     let pruned_pft = change_gamma pft delta in
