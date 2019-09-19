@@ -1,4 +1,5 @@
 (* Testing Natural Deduction Trees *)
+(* Contains proofs for pad, prune and graft *)
 #use "../natural_deduction.ml";;
 
 let gam = [L "x"; L "p"];;
