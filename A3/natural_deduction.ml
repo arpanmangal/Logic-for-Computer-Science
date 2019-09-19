@@ -73,10 +73,12 @@ let extract_prop pft = match pft with
 
 
 (* Checking the validity of ndprooftree*)
-let valid_ndprooftree pft = match pft with
+let rec valid_ndprooftree pft = match pft with
     | Hyp (g, p) -> List.mem p g
     | TI (g) -> true
-    | ImpliesI (g, p, pft1) -> (match p with
+    | ImpliesI (g, p, pft1) -> 
+        if (valid_ndprooftree pft1 = false) then false else
+        (match p with
         | Impl(p1, q1) -> 
             let g' = extract_gamma pft1 in
             let q2 = extract_prop pft1 in
@@ -85,6 +87,8 @@ let valid_ndprooftree pft = match pft with
             else true
         | _ -> false)
     | ImpliesE (g, p, pft1, pft2) ->
+        if (valid_ndprooftree pft1 = false) then false else
+        if (valid_ndprooftree pft2 = false) then false else
         let q1 = p in
         if extract_gamma pft1 <> g then false
         else if extract_gamma pft2 <> g then false
@@ -92,16 +96,32 @@ let valid_ndprooftree pft = match pft with
             let p1 = extract_prop pft2 in
             if extract_prop pft1 <> Impl(p1, q1) then false
             else true
-    | NotInt (g, p, pft1) -> 
+    | NotInt (g, p, pft1) ->
+        if (valid_ndprooftree pft1 = false) then false else 
         if g <> extract_gamma pft1 then false
         else if extract_prop pft1 <> F then false
         else true
     | NotClass (g, p, pft1) ->
+        if (valid_ndprooftree pft1 = false) then false else
         let g' = extract_gamma pft1 in
-        if difference g' g <> [Not (p)] then false
+        let np1 = Not (p) in
+        let np2 = (match p with
+            | Not (p') -> p'
+            | _ -> Not (p)
+        ) in
+        if (not_equal (union g [np1]) g') && (not_equal (union g [np2]) g') then false 
+        (* let notp = (difference g' g) in *)
+        (* if List.length notp <> 1 then false else *)
+        (* let notp = (match notp with *)
+            (* | x::[] -> x *)
+            (* | _ -> L "randomness") in *)
+        (* if ((notp <> Not (p)) && (Not (notp) <> p)) then false *)
         else if extract_prop pft1 <> F then false
         else true
-    | AndI (g, p, pft1, pft2) -> (match p with
+    | AndI (g, p, pft1, pft2) -> 
+        if (valid_ndprooftree pft1 = false) then false else
+        if (valid_ndprooftree pft2 = false) then false else
+        (match p with
         | And(p1, q1) -> 
             if extract_gamma pft1 <> g then false
             else if extract_gamma pft2 <> g then false
@@ -110,32 +130,42 @@ let valid_ndprooftree pft = match pft with
             else true
         | _ -> false)
     | AndEL (g, p, pft1) -> 
+        if (valid_ndprooftree pft1 = false) then false else
         if extract_gamma pft1 <> g then false
         else (match (extract_prop pft1) with
             | And(p1, q1) -> if p = p1 then true else false
             | _ -> false)
     | AndER (g, p, pft1) ->
+        if (valid_ndprooftree pft1 = false) then false else
         if extract_gamma pft1 <> g then false
         else (match (extract_prop pft1) with
             | And(p1, q1) -> if p = q1 then true else false
             | _ -> false)
-    | OrIL (g, p, pft1) -> (match p with
+    | OrIL (g, p, pft1) -> 
+        if (valid_ndprooftree pft1 = false) then false else
+        (match p with
         | Or (p1, q1) -> 
             if extract_gamma pft1 <> g then false
             else if extract_prop pft1 = p1 then true else false
         | _ -> false)
-    | OrIR (g, p, pft1) ->( match p with
+    | OrIR (g, p, pft1) ->
+        if (valid_ndprooftree pft1 = false) then false else
+        (match p with
         | Or (p1, q1) -> 
             if extract_gamma pft1 <> g then false
             else if extract_prop pft1 = q1 then true else false
         | _ -> false)
     | OrE (g, p, pft1, pft2, pft3) ->
+        if (valid_ndprooftree pft1 = false) then false else
+        if (valid_ndprooftree pft2 = false) then false else
+        if (valid_ndprooftree pft3 = false) then false else
         let r = p in
         if extract_gamma pft1 <> g then false
         else (match (extract_prop pft1) with
             | Or (p1, q1) ->
-                if difference (extract_gamma pft2) g <> [p1] then false
-                else if difference (extract_gamma pft3) g <> [q1] then false
+                if not_equal (union g [p1]) (extract_gamma pft2) then false
+                else if not_equal (union g [q1]) (extract_gamma pft3) then false
+                (* else if difference (extract_gamma pft3) g <> [q1] then false *)
                 else if extract_prop pft2 <> r then false
                 else if extract_prop pft3 <> r then false
                 else true

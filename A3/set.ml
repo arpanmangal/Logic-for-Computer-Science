@@ -9,6 +9,7 @@ let rec union set1 set2 = match set2 with
 let rec equal set1 set2 = 
     union set1 set2 = set1
 ;;
+let not_equal set1 set2 = not (equal set1 set2);;
 
 let intersection set1 set2 = 
     let rec cum_inter set1 set2 inter = match set2 with
