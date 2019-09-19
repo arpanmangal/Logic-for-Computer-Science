@@ -104,12 +104,13 @@ let rec valid_ndprooftree pft = match pft with
     | NotClass (g, p, pft1) ->
         if (valid_ndprooftree pft1 = false) then false else
         let g' = extract_gamma pft1 in
-        let np1 = Not (p) in
+        (* let np1 = Not (p) in
         let np2 = (match p with
             | Not (p') -> p'
             | _ -> Not (p)
         ) in
-        if (not_equal (union g [np1]) g') && (not_equal (union g [np2]) g') then false 
+        if (not_equal (union g [np1]) g') && (not_equal (union g [np2]) g') then false  *)
+        if (not_equal (union g [Not p]) g') then false 
         (* let notp = (difference g' g) in *)
         (* if List.length notp <> 1 then false else *)
         (* let notp = (match notp with *)
@@ -174,7 +175,7 @@ let rec valid_ndprooftree pft = match pft with
 
 
 (* Padding *)
-let rec replace_gamma pft newGamma = match pft with
+(* let rec replace_gamma pft newGamma = match pft with
     | Hyp (g, p) -> Hyp (newGamma, p)
     | TI (g) -> TI (newGamma)
     | ImpliesI (g, p, pft1) -> ImpliesI (newGamma, p, pft1)
@@ -187,36 +188,93 @@ let rec replace_gamma pft newGamma = match pft with
     | OrIL (g, p, pft1) -> OrIL (newGamma, p, pft1)
     | OrIR (g, p, pft1) -> OrIR (newGamma, p, pft1) 
     | OrE (g, p, pft1, pft2, pft3) -> OrE (newGamma, p, pft1, pft2, pft3)
-;;
+;; *)
 
 let rec pad pft delta =
     let _a = assert (valid_ndprooftree pft) in
     let g = extract_gamma pft in
     let newGamma = union g delta in
-    let padded_pft = replace_gamma pft newGamma in
+    let padded_pft = (match pft with
+        | Hyp (g, p) -> Hyp (newGamma, p)
+        | TI (g) -> TI (newGamma)
+        | ImpliesI (g, p, pft1) -> ImpliesI (newGamma, p, pad pft1 delta)
+        | ImpliesE (g, p, pft1, pft2) -> ImpliesE (newGamma, p, pad pft1 delta, pad pft2 delta)
+        | NotInt (g, p, pft1) -> NotInt (newGamma, p, pad pft1 delta)
+        | NotClass (g, p, pft1) -> NotClass (newGamma, p, pad pft1 delta)
+        | AndI (g, p, pft1, pft2) -> AndI (newGamma, p, pad pft1 delta, pad pft2 delta)
+        | AndEL (g, p, pft1) -> AndEL (newGamma, p, pad pft1 delta)
+        | AndER (g, p, pft1) -> AndER (newGamma, p, pad pft1 delta)
+        | OrIL (g, p, pft1) -> OrIL (newGamma, p, pad pft1 delta)
+        | OrIR (g, p, pft1) -> OrIR (newGamma, p, pad pft1 delta) 
+        | OrE (g, p, pft1, pft2, pft3) -> OrE (newGamma, p, pad pft1 delta, pad pft2 delta, pad pft3 delta)
+    ) in
     let _a = assert (valid_ndprooftree padded_pft) in
     padded_pft
 ;;
 
 
 (* Pruning *)
+exception INCORRECT_STUCTURE;;
 let prune pft = 
     let rec find_delta pft = match pft with
         | Hyp (g, p) -> [p]
         | TI (g) -> []
-        | ImpliesI (g, p, pft1) -> find_delta pft1
+        | ImpliesI (g, p, pft1) -> 
+            let p' = (match p with
+                | Impl(p1, q1) -> p1
+                | _ -> raise INCORRECT_STUCTURE
+            ) in difference (find_delta pft1) [p']
         | ImpliesE (g, p, pft1, pft2) -> union (find_delta pft1) (find_delta pft2)
         | NotInt (g, p, pft1) -> find_delta pft1
-        | NotClass (g, p, pft1) -> find_delta pft1
+        | NotClass (g, p, pft1) -> difference (find_delta pft1) [Not p]
         | AndI (g, p, pft1, pft2) -> union (find_delta pft1) (find_delta pft2)
         | AndEL (g, p, pft1) -> find_delta pft1
         | AndER (g, p, pft1) -> find_delta pft1
         | OrIL (g, p, pft1) -> find_delta pft1
         | OrIR (g, p, pft1) -> find_delta pft1
-        | OrE (g, p, pft1, pft2, pft3) -> union (find_delta pft1) (union (find_delta pft2) (find_delta pft3))
+        | OrE (g, p, pft1, pft2, pft3) -> 
+            let p', q' = (match (extract_prop pft1) with
+                | Or (p1, q1) -> p1, q1
+                | _ -> raise INCORRECT_STUCTURE
+            ) in
+            let gam1 = find_delta pft1 in
+            let gam2 = difference (find_delta pft2) [p'] in
+            let gam3 = difference (find_delta pft3) [q'] in
+            union gam1 (union gam2 gam3)
     in
     let delta = find_delta pft in
-    let pruned_pft = replace_gamma pft delta in
+    let rec change_gamma pft delta = match pft with
+        | Hyp (g, p) -> Hyp (delta, p)
+        | TI (g) -> TI (delta)
+        | ImpliesI (g, p, pft1) -> 
+            let p' = (match p with
+                | Impl(p1, q1) -> p1
+                | _ -> assert (false)
+            ) in ImpliesI (delta, p, change_gamma pft1 (union delta [p']))
+        | ImpliesE (g, p, pft1, pft2) -> ImpliesE (delta, p, change_gamma pft1 delta, change_gamma pft2 delta)
+        | NotInt (g, p, pft1) -> NotInt (delta, p, change_gamma pft1 delta)
+        | NotClass (g, p, pft1) -> NotClass (delta, p, change_gamma pft1 (union delta [Not p]))
+        | AndI (g, p, pft1, pft2) -> AndI (delta, p, change_gamma pft1 delta, change_gamma pft2 delta)
+        | AndEL (g, p, pft1) -> AndEL (delta, p, change_gamma pft1 delta)
+        | AndER (g, p, pft1) -> AndER (delta, p, change_gamma pft1 delta)
+        | OrIL (g, p, pft1) -> OrIL (delta, p, change_gamma pft1 delta)
+        | OrIR (g, p, pft1) -> OrIR (delta, p, change_gamma pft1 delta)
+        | OrE (g, p, pft1, pft2, pft3) -> 
+            let p', q' = (match (extract_prop pft1) with
+                | Or (p1, q1) -> p1, q1
+                | _ -> raise INCORRECT_STUCTURE
+            ) in
+            let delta1 = delta in
+            let delta2 = union delta [p'] in
+            let delta3 = union delta [q'] in
+            OrE (
+                delta, p,
+                change_gamma pft1 delta1,
+                change_gamma pft1 delta2,
+                change_gamma pft1 delta3
+            )
+    in
+    let pruned_pft = change_gamma pft delta in
     let _a = assert (valid_ndprooftree pruned_pft) in
     pruned_pft
 ;;

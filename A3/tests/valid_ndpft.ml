@@ -44,21 +44,18 @@ let nd_P = NotInt (rgam, L "some_p", nd_F);;
 assert (valid_ndprooftree nd_P);;
 
 let gam = [L"r"; F];;
-let pgam = union gam [p];;
 let npgam = union gam [Not(p)];;
 let nd_class = NotClass (gam, p, Hyp(npgam, F));;
-let nd_class2 = NotClass (gam, Not p, Hyp(pgam, F));;
 assert (valid_ndprooftree nd_class);;
-assert (valid_ndprooftree nd_class2);;
 
 let nd_andI = AndI (
-    gam, And(p, Not p), 
-    nd_class, nd_class2
+    gam, And(p, T), 
+    nd_class, TI (gam)
 );;
 assert (valid_ndprooftree nd_andI);;
 
 let nd_EL = AndEL (gam, p, nd_andI);;
-let nd_ER = AndER (gam, Not p, nd_andI);;
+let nd_ER = AndER (gam, T, nd_andI);;
 assert (valid_ndprooftree nd_EL);;
 assert (valid_ndprooftree nd_ER);;
 
