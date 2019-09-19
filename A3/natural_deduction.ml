@@ -310,21 +310,26 @@ let graft pft pft_list =
     else
         let gam = extract_one_gamma pft_list in
         let q_map = q_pft_map pft_list gam in
-        let rec stich pft = match pft with
-            | Hyp (g, p) -> q_map p
-            | TI (g) -> TI (g)
-            | ImpliesI (g, p, pft1) -> ImpliesI (g, p, stich pft1)
-            | ImpliesE (g, p, pft1, pft2) -> ImpliesE (g, p, stich pft1, stich pft2)
-            | NotInt (g, p, pft1) -> NotInt (g, p, stich pft1)
-            | NotClass (g, p, pft1) -> NotClass (g, p, stich pft1)
-            | AndI (g, p, pft1, pft2) -> AndI (g, p, stich pft1, stich pft2)
-            | AndEL (g, p, pft1) -> AndEL (g, p, stich pft1)
-            | AndER (g, p, pft1) -> AndER (g, p, stich pft1)
-            | OrIL (g, p, pft1) -> OrIL (g, p, stich pft1)
-            | OrIR (g, p, pft1) -> OrIR (g, p, stich pft1)
-            | OrE (g, p, pft1, pft2, pft3) -> OrE (g, p, stich pft1, stich pft2, stich pft3)
+        let rec stich pft gam = match pft with
+            | Hyp (g, p) -> if List.mem p delta then q_map p else Hyp (union gam [p], p)
+            | TI (g) -> TI (gam)
+            | ImpliesI (g, p, pft1) -> 
+                let p' = (match p with
+                    | Impl (p', q') -> p'
+                    | _ -> raise INCORRECT_STUCTURE
+                ) in
+                ImpliesI (gam, p, stich pft1 (union gam [p']))
+            | ImpliesE (g, p, pft1, pft2) -> ImpliesE (gam, p, stich pft1 gam, stich pft2 gam)
+            | NotInt (g, p, pft1) -> NotInt (gam, p, stich pft1 gam)
+            | NotClass (g, p, pft1) -> NotClass (gam, p, stich pft1 (union gam [Not p]))
+            | AndI (g, p, pft1, pft2) -> AndI (gam, p, stich pft1 gam, stich pft2 gam)
+            | AndEL (g, p, pft1) -> AndEL (gam, p, stich pft1 gam)
+            | AndER (g, p, pft1) -> AndER (gam, p, stich pft1 gam)
+            | OrIL (g, p, pft1) -> OrIL (gam, p, stich pft1 gam)
+            | OrIR (g, p, pft1) -> OrIR (gam, p, stich pft1 gam)
+            | OrE (g, p, pft1, pft2, pft3) -> OrE (gam, p, stich pft1 gam, stich pft2 gam, stich pft3 gam)
         in
-        let spft = stich pft in
+        let spft = stich pft gam in
         let _a = assert (valid_ndprooftree spft) in
         spft
 ;;

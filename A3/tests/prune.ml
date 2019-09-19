@@ -78,6 +78,19 @@ extract_gamma pruned2;;
 
 assert (valid_ndprooftree pruned2);;
 
+let g = L "g";;
+let one_gamma = [F; g; Impl(g, x)];;
+let pft_list = [
+    Hyp (one_gamma, F);
+    ImpliesE (one_gamma, x, Hyp(one_gamma, Impl(g,x)), Hyp(one_gamma, g))
+];;
+
+extract_gamma bigPFT;;
+let gft = graft bigPFT pft_list;;
+extract_gamma gft;;
+
+let pgft = prune gft;;
+extract_gamma pgft;;
 
 (* let p = T;; let q = L "q";;
 let gam = [L "bh"];;
@@ -87,3 +100,5 @@ let pft3 = TI (union gam [q]);;
 let smallPFT = OrE (gam, T, pftPorQ, pft2, pft3);;
 extract_gamma smallPFT;;
 prune smallPFT;; *)
+
+(* assert (false);; *)
