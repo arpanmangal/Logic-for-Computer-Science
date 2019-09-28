@@ -51,3 +51,9 @@ let r2 = find_rpair pft2;; assert (r2 = pft2);;
 let r3 = find_rpair pft3;; assert (r3 = pft3);;
 let r4 = find_rpair pft4;; assert (r4 = pft4);;
 let r5 = find_rpair pft5;; assert (r5 = pft5);;
+
+let s1 = simplify1 r1;;
+let s2 = simplify1 r2;;
+let s3 = simplify1 r3;;
+let s4 = simplify1 r4;;
+let s5 = simplify1 r5;;

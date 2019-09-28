@@ -70,42 +70,45 @@ let rec change_gamma pft newGamma =
 ;;
 
 let rec simple_pft_q pft_pq pft_p new_gam = 
-    let p = extract_prop pft_p in
-    let simple_tree = match pft_pq with
-        | TI (old_gam) -> TI (new_gam)
-        | Hyp (old_gam, q) -> if p = q then change_gamma pft_p new_gam else Hyp (new_gam, q)
-        | ImpliesI (old_gam, Impl(p', q'), pft') ->
-            ImpliesI (new_gam, Impl(p', q'), 
-                simple_pft_q pft' pft_p (union new_gam [p']))
-        | ImpliesE (old_gam, q, pft1, pft2) ->
-            ImpliesE (new_gam, q,
-                simple_pft_q pft1 pft_p new_gam, simple_pft_q pft2 new_gam)
-        | NotInt (old_gam, p, pft1) ->
-            NotInt (new_gam, p, simple_pft_q pft1 pft_p new_gam)
-        | NotClass (old_gam, p, pft1) ->
-            NotClass (new_gam, p, simple_pft_q pft1 pft_p (union new_gam [Not p]))
-        | AndI (old_gam, pq, pft1, pft2) ->
-            AndI (new_gam, pq, simple_pft_q pft1 pft_p new_gam, simple_pft_q pft2 pft_p new_gam)
-        | AndEL (old_gam, p, pft1) ->
-            AndEL (new_gam, p, simple_pft_q pft1 new_gam)
-        | AndER (old_gam, q, pft1) ->
-            AndER (new_gam, q, simple_pft_q pft1 new_gam)
-        | OrIL (old_gam, pq, pft1) -> OrIL (new_gam, pq, simple_pft_q pft1 new_gam)
-        | OrIR (old_gam, pq, pft1) -> OrIR (new_gam, pq, simple_pft_q pft1 new_gam) 
-        | OrE (old_gam, r, pft1, pft2, pft3) ->
-            let (p, q) = (match extract_prop pft1 with
-                    | Or (p, q) -> p, q
-                    | _ -> raise INVALID_TREE
-                ) in
-            OrE (new_gam, r, 
-                simple_pft_q pft1 new_gam, 
-                simple_pft_q pft2 (union new_gam [p]), 
-                simple_pft_q pft3 (union new_gam [q])
-            )
-        | _ -> raise INVALID_TREE
+    let rec simple_pft_q pft_pq new_gam =
+        let p = extract_prop pft_p in
+        let simple_tree = match pft_pq with
+            | TI (old_gam) -> TI (new_gam)
+            | Hyp (old_gam, q) -> if p = q then change_gamma pft_p new_gam else Hyp (new_gam, q)
+            | ImpliesI (old_gam, Impl(p', q'), pft') ->
+                ImpliesI (new_gam, Impl(p', q'), 
+                    simple_pft_q pft' (union new_gam [p']))
+            | ImpliesE (old_gam, q, pft1, pft2) ->
+                ImpliesE (new_gam, q,
+                    simple_pft_q pft1 new_gam, simple_pft_q pft2 new_gam)
+            | NotInt (old_gam, p, pft1) ->
+                NotInt (new_gam, p, simple_pft_q pft1 new_gam)
+            | NotClass (old_gam, p, pft1) ->
+                NotClass (new_gam, p, simple_pft_q pft1 (union new_gam [Not p]))
+            | AndI (old_gam, pq, pft1, pft2) ->
+                AndI (new_gam, pq, simple_pft_q pft1 new_gam, simple_pft_q pft2 new_gam)
+            | AndEL (old_gam, p, pft1) ->
+                AndEL (new_gam, p, simple_pft_q pft1 new_gam)
+            | AndER (old_gam, q, pft1) ->
+                AndER (new_gam, q, simple_pft_q pft1 new_gam)
+            | OrIL (old_gam, pq, pft1) -> OrIL (new_gam, pq, simple_pft_q pft1 new_gam)
+            | OrIR (old_gam, pq, pft1) -> OrIR (new_gam, pq, simple_pft_q pft1 new_gam) 
+            | OrE (old_gam, r, pft1, pft2, pft3) ->
+                let (p, q) = (match extract_prop pft1 with
+                        | Or (p, q) -> p, q
+                        | _ -> raise INVALID_TREE
+                    ) in
+                OrE (new_gam, r, 
+                    simple_pft_q pft1 new_gam, 
+                    simple_pft_q pft2 (union new_gam [p]), 
+                    simple_pft_q pft3 (union new_gam [q])
+                )
+            | _ -> raise INVALID_TREE
+        in
+        let _a = assert (valid_ndprooftree simple_tree) in
+        simple_tree
     in
-    let _a = assert (valid_ndprooftree simple_tree) in
-    simple_tree
+    simple_pft_q pft_pq new_gam
 ;;
 
 let rec simplify1 pft = 
@@ -122,11 +125,11 @@ let rec simplify1 pft =
                 | ImpliesI (gam, pIMPq, pft') -> simple_pft_q pft' pft2 gam
                 | _ -> raise INVALID_TREE
             )
-        | Or (gam, r, pft1, pft2, pft3) ->
-            let p, q = (match extract_prop pft1 with
+        | OrE (gam, r, pft1, pft2, pft3) ->
+            (* let p, q = (match extract_prop pft1 with
                 | Or (p, q) -> (p, q)
                 | _ -> raise INVALID_TREE
-            ) in
+            ) in *)
             (match pft1 with 
                 | OrIL (gam, pq, pft) -> simple_pft_q pft2 pft gam
                 | OrIR (gam, pq, pft) -> simple_pft_q pft3 pft gam
@@ -140,7 +143,7 @@ let rec simplify1 pft =
 
 
 (* Fully normalizing the tree *)
-let simplify pft rpair =
+(* let simplify pft rpair =
     let rec simplify pft =
         if pft = rpair then simplify1 rpair else
         match pft with
@@ -168,4 +171,4 @@ let rec normalise pft =
         normalise (simplify pft rpair)
     with
         Normalized -> pft
-;;
+;; *)
