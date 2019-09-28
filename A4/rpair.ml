@@ -140,3 +140,32 @@ let rec simplify1 pft =
 
 
 (* Fully normalizing the tree *)
+let simplify pft rpair =
+    let rec simplify pft =
+        if pft = rpair then simplify1 rpair else
+        match pft with
+        | Hyp (g, p) -> pft
+        | TI (g) -> pft
+        | ImpliesI (g, p, pft1) -> ImpliesI (g, p, simplify pft1)
+        | ImpliesE (g, p, pft1, pft2) -> ImpliesE (g, p, simplify pft1, simplify pft2)
+        | NotInt (g, p, pft1) -> NotInt (g, p, simplify pft1)
+        | NotClass (g, p, pft1) -> NotClass (g, p, simplify pft1)
+        | AndI (g, p, pft1, pft2) -> AndI (g, p, simplify pft1, simplify pft2)
+        | AndEL (g, p, pft1) -> AndEL (g, p, simplify pft1)
+        | AndER (g, p, pft1) -> AndER (g, p, simplify pft1)
+        | OrIL (g, p, pft1) -> OrIL (g, p, simplify pft1)
+        | OrIR (g, p, pft1) -> OrIR (g, p, simplify pft1)
+        | OrE (g, p, pft1, pft2, pft3) -> OrE (g, p, simplify pft1, simplify pft2, simplify pft3)
+    in
+    let simple_tree = simple_tree pft in
+    let _a = assert (valid_ndprooftree simple_tree) in
+    simple_tree
+;;
+
+let rec normalise pft = 
+    try
+        let rpair = find_rpair pft in
+        normalise (simplify pft rpair)
+    with
+        Normalized -> pft
+;;
