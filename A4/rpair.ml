@@ -143,7 +143,7 @@ let rec simplify1 pft =
 
 
 (* Fully normalizing the tree *)
-(* let simplify pft rpair =
+let simplify pft rpair =
     let rec simplify pft =
         if pft = rpair then simplify1 rpair else
         match pft with
@@ -160,7 +160,7 @@ let rec simplify1 pft =
         | OrIR (g, p, pft1) -> OrIR (g, p, simplify pft1)
         | OrE (g, p, pft1, pft2, pft3) -> OrE (g, p, simplify pft1, simplify pft2, simplify pft3)
     in
-    let simple_tree = simple_tree pft in
+    let simple_tree = simplify pft in
     let _a = assert (valid_ndprooftree simple_tree) in
     simple_tree
 ;;
@@ -171,4 +171,4 @@ let rec normalise pft =
         normalise (simplify pft rpair)
     with
         Normalized -> pft
-;; *)
+;;
