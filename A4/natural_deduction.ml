@@ -104,19 +104,7 @@ let rec valid_ndprooftree pft = match pft with
     | NotClass (g, p, pft1) ->
         if (valid_ndprooftree pft1 = false) then false else
         let g' = extract_gamma pft1 in
-        (* let np1 = Not (p) in
-        let np2 = (match p with
-            | Not (p') -> p'
-            | _ -> Not (p)
-        ) in
-        if (not_equal (union g [np1]) g') && (not_equal (union g [np2]) g') then false  *)
         if (not_equal (union g [Not p]) g') then false 
-        (* let notp = (difference g' g) in *)
-        (* if List.length notp <> 1 then false else *)
-        (* let notp = (match notp with *)
-            (* | x::[] -> x *)
-            (* | _ -> L "randomness") in *)
-        (* if ((notp <> Not (p)) && (Not (notp) <> p)) then false *)
         else if extract_prop pft1 <> F then false
         else true
     | AndI (g, p, pft1, pft2) -> 
@@ -175,21 +163,6 @@ let rec valid_ndprooftree pft = match pft with
 
 
 (* Padding *)
-(* let rec replace_gamma pft newGamma = match pft with
-    | Hyp (g, p) -> Hyp (newGamma, p)
-    | TI (g) -> TI (newGamma)
-    | ImpliesI (g, p, pft1) -> ImpliesI (newGamma, p, pft1)
-    | ImpliesE (g, p, pft1, pft2) -> ImpliesE (newGamma, p, pft1, pft2)
-    | NotInt (g, p, pft1) -> NotInt (newGamma, p, pft1)
-    | NotClass (g, p, pft1) -> NotClass (newGamma, p, pft1)
-    | AndI (g, p, pft1, pft2) -> AndI (newGamma, p, pft1, pft2)
-    | AndEL (g, p, pft1) -> AndEL (newGamma, p, pft1)
-    | AndER (g, p, pft1) -> AndER (newGamma, p, pft1)
-    | OrIL (g, p, pft1) -> OrIL (newGamma, p, pft1)
-    | OrIR (g, p, pft1) -> OrIR (newGamma, p, pft1) 
-    | OrE (g, p, pft1, pft2, pft3) -> OrE (newGamma, p, pft1, pft2, pft3)
-;; *)
-
 let rec pad pft delta =
     let _a = assert (valid_ndprooftree pft) in
     let g = extract_gamma pft in
