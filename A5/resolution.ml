@@ -24,6 +24,7 @@ exception NO_UNIF_CLAUSE;;
 exception SIGMA_NOT_FOUND;;
 let unify_clauses c1 c2 =
     let _a = assert (List.length c1 > 0 && List.length c2 > 0) in
+    if equal c1 c2 then raise NO_UNIF_CLAUSE else
     let rec unify_literal l c2 = match c2 with 
         | [] -> raise SIGMA_NOT_FOUND
         | x::xs -> 
@@ -45,3 +46,44 @@ let unify_clauses c1 c2 =
     in
     List.map apply_sigma c12
 ;;
+
+
+(* One step of resolution *)
+exception NOT_RESOLVING;;
+exception COMPLETELY_RESOLVED;;
+exception RESOLUTION_TERMINATION;;
+let semi_resolve clist =
+    let _a = assert (List.length clist > 0) in
+    let rec unify c1 clist = match clist with
+        | [] -> raise NOT_RESOLVING
+        | c2::cs -> 
+            try 
+                let c12 = unify_clauses c1 c2 in
+                if List.mem c12 clist then unify c1 cs else c12
+            with NO_UNIF_CLAUSE -> unify c1 cs
+    in
+    let rec try_all cs = match cs with
+        | [] -> raise COMPLETELY_RESOLVED
+        | c1::cs -> try unify c1 cs with NOT_RESOLVING -> try_all cs
+    in
+    let c12 = try_all clist in
+    if List.length c12 = 0 then raise RESOLUTION_TERMINATION else union clist [c12]
+;;
+
+
+let rec resolve clist = 
+    try
+        let clist = semi_resolve clist in
+        resolve clist
+    with 
+        | COMPLETELY_RESOLVED -> "COMPLETE"
+        | RESOLUTION_TERMINATION -> "RESOLVED"
+;;
+
+
+
+
+
+
+
+
