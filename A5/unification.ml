@@ -25,6 +25,12 @@ let rec wfterm signat t = match t with
     )
 ;;
 
+let rec valid_term t = match t with
+    | V (var) -> true
+    | Node (sym, l) -> (match sym with
+        Sym (name, arity) -> (List.length l = arity) && (foldl andT true (List.map valid_term l))
+    )
+;;
 
 (* Computing height, size and vars *)
 let rec ht t = match t with
@@ -86,7 +92,10 @@ let rec mgu_foldl f sigma l1 l2 = match l1, l2 with
     | _ -> raise NOT_UNIFIABLE
 ;;
 
-let rec mgu t1 t2 = match t1, t2 with
+let rec mgu t1 t2 = 
+    let _a1 = assert (valid_term t1) in
+    let _a2 = assert (valid_term t2) in
+    match t1, t2 with
     | V var1, V var2 -> if var1 = var2 then [] else [(var1, V var2)]
     | V var1, Node (sym, []) -> [(var1, Node (sym, []))]
     | Node (sym, []), V var2 -> [(var2, Node (sym, []))]

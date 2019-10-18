@@ -7,9 +7,21 @@ type clause = literal list;;
 type formula = clause list;;
 
 
+(* Helper functions *)
+(* let rec print_term t = match t with
+    | V (Var v) ->  *)
+
 (* Resolving two literals *)
 exception NO_UNIF_LITERAL;;
+exception INVALID_LITERAL;;
 let unify_literals l1 l2 = 
+    let valid_literal l = match l with
+        | P (V var) -> raise INVALID_LITERAL
+        | N (V var) -> raise INVALID_LITERAL
+        | _ -> ()
+    in
+    let _a = valid_literal l1 in
+    let _a = valid_literal l2 in
     match l1 with
     | P (t1) -> (match l2 with
         | P (t2) -> raise NO_UNIF_LITERAL
@@ -38,8 +50,9 @@ let unify_clauses c1 c2 =
         | x::xs -> try unify_literal x c2 with SIGMA_NOT_FOUND -> find_sigma xs
     in
     let (l1, l2, sigma) = find_sigma c1 in
-    let c12 = union c1 c2 in
-    let c12 = difference c12 [l1; l2] in
+    (* let c12 = union c1 c2 in
+    let c12 = difference c12 [l1; l2] in *)
+    let c12 = union (difference c1 [l1]) (difference c2 [l2]) in
     let apply_sigma l = match l with
         | P (t) -> P (subst sigma t)
         | N (t) -> N (subst sigma t)
@@ -54,7 +67,7 @@ exception COMPLETELY_RESOLVED;;
 exception RESOLUTION_TERMINATION;;
 let semi_resolve clist =
     let _a = assert (List.length clist > 0) in
-    let rec unify c1 clist = match clist with
+    let rec unify c1 cs = match cs with
         | [] -> raise NOT_RESOLVING
         | c2::cs -> 
             try 
@@ -70,14 +83,13 @@ let semi_resolve clist =
     if List.length c12 = 0 then raise RESOLUTION_TERMINATION else union clist [c12]
 ;;
 
-
 let rec resolve clist = 
     try
         let clist = semi_resolve clist in
         resolve clist
     with 
-        | COMPLETELY_RESOLVED -> "COMPLETE"
-        | RESOLUTION_TERMINATION -> "RESOLVED"
+        | COMPLETELY_RESOLVED -> "TERMINATED"
+        | RESOLUTION_TERMINATION -> "UNSAT"
 ;;
 
 
