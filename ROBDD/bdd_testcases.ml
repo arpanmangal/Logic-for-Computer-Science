@@ -5,7 +5,7 @@ let vx1 = L(1);;
 let vx2 = L(2)
 let vx3 = L(3);;
 
-let p0 = Iff(x1, x2);;
+let p0 = Iff(vx1, vx2);;
 let p1 = Or(p0,vx3);;
 let p2 = Or(vx2,vx3);;
 let np1 = Not(p1);;
@@ -32,16 +32,16 @@ let tnp1' = build np1';;
 let tnp1'' = build np1'';;
 
 (* Testcase #1 *)
-tp1 == tp1';;
-tp1 == tp1'';;
-tnp1 == tnp1';;
-tnp1 == tnp1'';;
+tp1 = tp1';;
+tp1 = tp1'';;
+tnp1 = tnp1';;
+tnp1 = tnp1'';;
 
 (* Testcase #2 *)
 let tp1anp1 = apply AND tp1 tnp1;;
-tp1anp1 == tf;;
+tp1anp1 = tf;;
 let tp1onp1 = apply OR tp1 tnp1;;
-tp1onp1 == tt;;
+tp1onp1 = tt;;
 
 (* Testcase #3 *)
 let tp1rv30 = restrict t1 3 0;;

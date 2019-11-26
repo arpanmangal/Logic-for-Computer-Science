@@ -61,3 +61,56 @@ let build t =
     in
     build rob t 1
 ;;
+
+(* Applying a operation *)
+type operator = AND | OR;;
+let apply op ru1 ru2 =
+    (* Initialize robdd *)
+    let rob = init 0 in
+    let g_tab = Hashtbl.create 10000 in
+
+    (* extract u1 u2 *)
+    match ru1 with (rob1, u1') ->
+    match ru2 with (rob2, u2') ->
+
+    (* App function *)
+    let rec app rob u1 u2 = 
+        (* if already calculated then use as is *)
+        try (rob, Hashtbl.find g_tab (u1, u2)) with Not_found ->
+        let result = 
+            (* if both of them is 0 or 1 *)
+            if (u1 = 0 || u1 = 1) && (u2 = 0 || u2 = 1) then
+                let u = (match op with
+                | AND -> if (u1 + u2 = 2) then 1 else 0
+                | OR -> if (u1 + u2 = 0) then 0 else 1) in
+                (rob, u)
+            else
+                match (lookupT rob1 u1) with TR(v1, l1, h1) ->
+                match (lookupT rob2 u2) with TR(v2, l2, h2) ->
+                if v1 = v2 then
+                    (* Distribute on both *)
+                    let (rob, v1') = app rob l1 l2 in
+                    let (rob, v2') = app rob h1 h2 in
+                    mk rob (TR (v1, v1', v2'))
+                else if v1 > v2 then
+                    (* v1 comes before *)
+                    let (rob, v1') = app rob l1 v2 in
+                    let (rob, v2') = app rob h1 v2 in
+                    mk rob (TR (v1, v1', v2'))
+                else
+                    (* v1 comes after *)
+                    let (rob, v1') = app rob v1 l2 in
+                    let (rob, v2') = app rob v1 h2 in
+                    mk rob (TR (v2, v1', v2'))
+        in
+        (* Add into G *)
+        match result with (rob, u) ->
+        let _i = Hashtbl.add g_tab (u1, u2) u in
+        result
+    in
+
+    match rob1 with R(next1, t_tab1, h_tab1) ->
+    match rob2 with R(next2, t_tab2, h_tab2) ->
+    let result = app rob (next1 - 1) (next2 - 1) in
+    result
+;;
