@@ -50,8 +50,8 @@ let tp1rv31 = restrict t1 3 1;;
 tp1rv31 =  tt;;
 
 (* Testcase #4 *)
-allsat t1;; (* 4 solutions: { {x1 = 0, x2 = 0}, {x1 = 1, x2 = 1}, {x1 = 1, x2 = 0, x3 = 1}, {x1 = 0, x2 = 1, x3 = 1}} *)
-anysat t1;; (* any of the above *)
+allsat tp1;; (* 4 solutions: { {x1 = 0, x2 = 0}, {x1 = 1, x2 = 1}, {x1 = 1, x2 = 0, x3 = 1}, {x1 = 0, x2 = 1, x3 = 1}} *)
+anysat tp1;; (* any of the above *)
 
 (* Testcase #5 *)
 let tstp2tp1 = simplify tp2 tp1;;

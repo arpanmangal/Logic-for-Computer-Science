@@ -144,3 +144,42 @@ let restrict ru j b =
     res rob u
 ;;
 
+
+(* Anysat *)
+exception Error;;
+type mapping = Mapp of int * int;;
+let rec anysat ru = 
+    (* Extract robdd, u *)
+    match ru with (rob, u) ->
+
+    if u = 0 then raise Error
+    else if u = 1 then []
+    else
+        match (lookupT rob u) with TR(v, l, h) ->
+        if l = 0 then (Mapp(v, 1)::(anysat (rob, h)))
+        else (Mapp(v, 0)::(anysat (rob, h)))
+;;
+
+let rec allsat ru = 
+    (* Extract robdd, u *)
+    match ru with (rob, u) ->
+
+    if u = 0 then []
+    else if u = 1 then [[]]
+    else
+        match (lookupT rob u) with TR(v, l, h) ->
+        let m0 = Mapp(v, 0) in
+        let m1 = Mapp(v, 1) in
+        let ass_low = allsat (rob, l) in
+        let ass_high = allsat (rob, h) in
+        (* ass is a list of list and returns a list of lists *)
+        let rec lows ass = match ass with
+            | [] -> []
+            | x::xs -> (m0::x)::(lows xs)
+        in
+        let rec highs ass = match ass with
+            | [] -> []
+            | x::xs -> (m1::x)::(highs xs)
+        in
+        (lows ass_low) @ (highs ass_high)
+;;
