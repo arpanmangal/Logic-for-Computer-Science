@@ -126,15 +126,16 @@ let restrict ru j b =
 
     (* res function *)
     let rec res rob u =
-        if u < j then
+        match (lookupT rob1 u) with TR(v1, l1, h1) ->
+        if v1 > j then
             (* j is not my child *)
             (rob, u)
-        else if u > j then 
+        else if v1 < j then 
             match (lookupT rob1 u) with TR(v1, l1, h1) ->
             let (rob, u1) = res rob l1 in
             let (rob, u2) = res rob h1 in
             mk rob (TR (v1, u1, u2)) 
-        else if u = j && b = 0 then
+        else if v1 = j && b = 0 then
             match (lookupT rob1 u) with TR(v1, l1, h1) ->
             res rob l1
         else 

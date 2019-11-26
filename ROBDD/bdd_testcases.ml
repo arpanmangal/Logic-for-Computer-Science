@@ -45,8 +45,8 @@ tp1onp1 = tt;;
 
 (* Testcase #3 *)
 let tp1rv30 = restrict tp1 3 0;;
-tp1rv30 == tp0;;
-let tp1rv31 = restrict t1 3 1;;
+tp1rv30 = tp0;;
+let tp1rv31 = restrict tp1 3 1;;
 tp1rv31 =  tt;;
 
 (* Testcase #4 *)
