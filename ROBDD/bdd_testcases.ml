@@ -55,6 +55,6 @@ anysat tp1;; (* any of the above *)
 
 (* Testcase #5 *)
 let tstp2tp1 = simplify tp2 tp1;;
-tstp2tp1 == tt;;
+tstp2tp1 = tt;;
 let tstvx1tp1 = simplify tvx1 tp1;;
-tstvx1tp1 == tp2;;
+tstvx1tp1 = tp2;;

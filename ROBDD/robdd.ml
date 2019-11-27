@@ -184,3 +184,41 @@ let rec allsat ru =
         in
         (lows ass_low) @ (highs ass_high)
 ;;
+
+(* Simplify *)
+let simplify du ru =
+    (* Initialize robdd *)
+    let rob = init 0 in
+
+    let rec sim du ru rob =
+        (* Extract d and u *)
+        match ru with (rob_ru, u) ->
+        match du with (rob_du, d) ->
+
+        match (lookupT rob_du d) with TR(d_v, d_l, d_h) ->
+        match (lookupT rob_ru u) with TR(u_v, u_l, u_h) ->
+
+        if d = 0 then (rob, 0)
+        else if u <= 1 then (rob, u)
+        else if d = 1 then
+            let (rob, u1) = sim (rob_du, d) (rob_ru, u_l) rob in
+            let (rob, u2) = sim (rob_du, d) (rob_ru, u_h) rob in
+            mk rob (TR (u_v, u1, u2)) 
+        else if d_v = u_v then
+            if d_l = 0 then sim (rob_du, d_h) (rob_ru, u_h) rob
+            else if d_h = 0 then sim (rob_du, d_l) (rob_ru, u_l) rob
+            else
+                let (rob, u1) = sim (rob_du, d_l) (rob_ru, u_l) rob in
+                let (rob, u2) = sim (rob_du, d_h) (rob_ru, u_h) rob in
+                mk rob (TR (u_v, u1, u2))
+        else if d_v < u_v then
+            let (rob, u1) = sim (rob_du, d_l) (rob_ru, u) rob in
+            let (rob, u2) = sim (rob_du, d_h) (rob_ru, u) rob in
+            mk rob (TR (d_v, u1, u2))
+        else
+            let (rob, u1) = sim (rob_du, d) (rob_ru, u_l) rob in
+            let (rob, u2) = sim (rob_du, d) (rob_ru, u_h) rob in
+            mk rob (TR (u_v, u1, u2))
+    in
+    sim du ru rob
+;;
